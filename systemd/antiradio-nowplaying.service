@@ -1,0 +1,15 @@
+[Unit]
+Description=La Antiradio - Now Playing (Zeno -> nowplaying.txt + cover.jpg)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/antiradio
+ExecStart=/opt/antiradio/nowplaying.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

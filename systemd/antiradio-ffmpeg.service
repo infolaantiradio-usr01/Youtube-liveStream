@@ -1,0 +1,18 @@
+[Unit]
+Description=La Antiradio - FFmpeg (Zeno -> YouTube 24/7)
+After=network-online.target antiradio-nowplaying.service
+Wants=network-online.target
+Requires=antiradio-nowplaying.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/antiradio
+ExecStart=/opt/antiradio/ffmpeg.sh
+Restart=always
+RestartSec=5
+TimeoutStartSec=0
+Nice=5
+
+[Install]
+WantedBy=multi-user.target
+
