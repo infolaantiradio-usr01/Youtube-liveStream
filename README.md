@@ -1,34 +1,90 @@
-# La Antiradio – VPS Ubuntu + YouTube 24/7
+# 🎸 La Antiradio – YouTube Live Stream (v1.1)
 
-Este paquete contiene los scripts y servicios `systemd` para emitir una radio 24/7 desde Zeno.fm a YouTube Live, con overlay de Now Playing y carátula.
+Sistema de emisión **24/7** para **La Antiradio**, basado en **FFmpeg + systemd**, que convierte un stream de audio en una emisión de YouTube con fondos dinámicos y Now Playing en tiempo real.
 
-## Estructura
-- `nowplaying.sh` → escucha metadatos (SSE) de Zeno, actualiza `nowplaying.txt` y `cover.jpg`
-- `ffmpeg.sh` → genera vídeo 720p con overlay y lo envía por RTMP a YouTube
-- `antiradio-nowplaying.service` → servicio systemd para nowplaying
-- `antiradio-ffmpeg.service` → servicio systemd para ffmpeg
+---
 
-## Instalación rápida
-1. Copia la carpeta `antiradio` a `/opt/antiradio` en tu VPS.
-2. Copia `antiradio-nowplaying.service` a `/etc/systemd/system/antiradio-nowplaying.service`
-3. Copia `antiradio-ffmpeg.service` a `/etc/systemd/system/antiradio-ffmpeg.service`
-4. Edita `/opt/antiradio/ffmpeg.sh` y sustituye `TU_STREAM_KEY` por tu clave del evento de YouTube.
-5. Permisos:
-   - `chmod +x /opt/antiradio/nowplaying.sh /opt/antiradio/ffmpeg.sh`
-6. Activar servicios:
-   - `systemctl daemon-reload`
-   - `systemctl enable --now antiradio-nowplaying.service`
-   - `systemctl enable --now antiradio-ffmpeg.service`
+## 🚀 Qué hace este sistema
 
-## Logs
-- `journalctl -u antiradio-nowplaying -f`
-- `journalctl -u antiradio-ffmpeg -f`
+- 📡 Toma audio en directo desde Zeno.fm  
+- 🎥 Genera vídeos de fondo dinámicos (imágenes y vídeos)
+- ⏱️ Convierte todo a clips de **5 minutos**
+- 🔀 Concatena los fondos automáticamente
+- 🎵 Muestra **NOW PLAYING** en tiempo real
+- 🔁 Funciona 24/7 con auto-restart (systemd)
 
-## Notas sobre carátulas
-Si Zeno no entrega URL de carátula, puedes usar carátulas locales:
-- Guarda JPGs en `/opt/antiradio/covers/`
-- Nombre del archivo = el texto de `nowplaying.txt` + `.jpg`
-  Ejemplo: `NEBOXPOP - CICATRICES EN REVERSA.jpg`
+---
 
-Generado: 2026-02-01
+## 📂 Estructura en el VPS
 
+```text
+/opt/antiradio/
+├── backgrounds/
+├── bg_clips/
+├── covers/
+├── bg_concat.txt
+├── cover.jpg
+├── nowplaying.txt
+├── logo.png
+├── ffmpeg.sh
+├── nowplaying.sh
+└── make_backgrounds.sh
+```
+
+---
+
+## 🎥 Fondos dinámicos (clips de 5 minutos)
+
+### Añadir nuevos fondos
+
+1. Copia imágenes o vídeos a:
+```bash
+/opt/antiradio/backgrounds/
+```
+
+2. Ejecuta:
+```bash
+sudo /opt/antiradio/make_backgrounds.sh
+```
+
+✔ Script incremental  
+✔ Sin audio en los fondos  
+✔ No borra clips existentes  
+
+---
+
+## 🎵 Now Playing
+
+- Actualiza metadatos en caliente
+- Texto animado tipo directo
+- Sin cortes de emisión
+
+Archivo:
+```bash
+/opt/antiradio/nowplaying.txt
+```
+
+---
+
+## 🔧 Servicios systemd
+
+```bash
+sudo systemctl start antiradio-ffmpeg
+sudo systemctl stop antiradio-ffmpeg
+sudo systemctl restart antiradio-ffmpeg
+journalctl -u antiradio-ffmpeg -f
+```
+
+---
+
+## 🏷️ Versiones
+
+- v1.0 – Base funcional  
+- v1.1 – Fondos dinámicos + Now Playing mejorado  
+
+---
+
+## 🎸 La Antiradio
+
+Radio viva.  
+Rock, ruido y verdad.
