@@ -86,7 +86,7 @@ log "Servicios systemd actualizados"
 # --- 8. Verificar conexión con AzuraCast ---
 echo ""
 log "Verificando conexión con AzuraCast..."
-API_RESPONSE="$(curl -fsSL --max-time 10 'https://radio.laantiradio.com/api/nowplaying/la_antiradio' 2>/dev/null || true)"
+API_RESPONSE="$(curl -fsSL --max-time 10 'https://radio.laantiradio.com/api/nowplaying/la_antiradio_youtube' 2>/dev/null || true)"
 
 if [[ -n "$API_RESPONSE" ]]; then
   ARTIST="$(echo "$API_RESPONSE" | jq -r '.now_playing.song.artist // "?"')"
@@ -96,7 +96,7 @@ else
   warn "No se pudo conectar con la API de AzuraCast. Comprueba la URL."
 fi
 
-AUDIO_STATUS="$(curl -sI --max-time 10 'https://radio.laantiradio.com/listen/la_antiradio/laantiradio.mp3' 2>/dev/null | head -1 || true)"
+AUDIO_STATUS="$(curl -sI --max-time 10 'https://radio.laantiradio.com/listen/la_antiradio_youtube/radio.mp3' 2>/dev/null | head -1 || true)"
 if [[ "$AUDIO_STATUS" == *"200"* ]]; then
   log "Stream de audio OK (HTTP 200)"
 else

@@ -8,7 +8,7 @@ STREAM_KEY="TU_STREAM_KEY"
 RTMP_URL="rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}"
 
 # Audio desde AzuraCast
-AZURACAST_URL="https://radio.laantiradio.com/listen/la_antiradio/laantiradio.mp3"
+AZURACAST_URL="https://radio.laantiradio.com/listen/la_antiradio_youtube/radio.mp3"
 
 # Archivos generados por nowplaying.sh
 LOGO="/opt/antiradio/logo.png"
@@ -20,7 +20,7 @@ exec ffmpeg \
 -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 10 \
 -i "${AZURACAST_URL}" \
 -loop 1 -i "${LOGO}" \
--loop 1 -i "${COVER}" \
+-stream_loop -1 -re -f image2 -framerate 1 -i "${COVER}" \
 -filter_complex "\
 [1:v]scale=1280:720,format=yuv420p[bg];\
 [2:v]scale=220:220:force_original_aspect_ratio=decrease,\

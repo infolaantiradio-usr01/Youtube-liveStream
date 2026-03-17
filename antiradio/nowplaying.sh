@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # AzuraCast API – Now Playing
-API_URL="https://radio.laantiradio.com/api/nowplaying/la_antiradio"
+API_URL="https://radio.laantiradio.com/api/nowplaying/la_antiradio_youtube"
 POLL_INTERVAL=15   # segundos entre consultas
 
 # Rutas del proyecto
