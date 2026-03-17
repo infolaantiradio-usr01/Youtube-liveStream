@@ -7,100 +7,45 @@ POLL_INTERVAL=15   # segundos entre consultas
 
 # Rutas del proyecto
 DIR="/opt/antiradio"
-NOW_FILE="${DIR}/nowplaying.txt"
+ARTIST_FILE="${DIR}/artist.txt"
+TITLE_FILE="${DIR}/title.txt"
 COVER_FILE="${DIR}/cover.jpg"
 LOGO_FILE="${DIR}/logo.png"
-LOCAL_COVERS_DIR="${DIR}/covers"
 
-mkdir -p "$LOCAL_COVERS_DIR"
-
-sanitize() {
-  # Limpia caracteres raros para nombres de archivo y texto
-  echo "$1" | tr -d '\r' | sed 's/[\\/:*?"<>|]/_/g; s/  */ /g; s/^ *//; s/ *$//'
-}
-
-set_default_cover() {
-  cp -f "$LOGO_FILE" "$COVER_FILE"
-}
-
-download_cover() {
-  local url="$1"
-  local tmp="${COVER_FILE}.tmp"
-  if curl -fsSL --max-time 15 "$url" -o "$tmp"; then
-    mv -f "$tmp" "$COVER_FILE"
-    return 0
-  fi
-  rm -f "$tmp"
-  return 1
-}
-
-last_key=""
+mkdir -p "${DIR}"
 
 echo "[nowplaying] consultando AzuraCast cada ${POLL_INTERVAL}s: $API_URL"
 
 while true; do
   # Obtener JSON de la API de AzuraCast
-  json="$(curl -fsSL --max-time 10 "$API_URL" 2>/dev/null || true)"
+  RESPONSE="$(curl -sL --max-time 10 "$API_URL" || true)"
 
-  if [[ -z "$json" ]]; then
-    echo "[nowplaying] sin respuesta de la API, reintentando..."
-    sleep "$POLL_INTERVAL"
-    continue
-  fi
+  if [[ -n "${RESPONSE}" ]] && echo "${RESPONSE}" | jq -e '.now_playing.song' >/dev/null 2>&1; then
+    SONG_ARTIST=$(echo "${RESPONSE}" | jq -r '.now_playing.song.artist // "La Antiradio"')
+    SONG_TITLE=$(echo "${RESPONSE}" | jq -r '.now_playing.song.title // "Live 24/7"')
+    SONG_ART=$(echo "${RESPONSE}" | jq -r '.now_playing.song.art // empty')
 
-  # Extraer artista y título
-  artist="$(echo "$json" | jq -r '.now_playing.song.artist // empty' 2>/dev/null || true)"
-  title="$(echo "$json"  | jq -r '.now_playing.song.title // empty'  2>/dev/null || true)"
+    # Limpiar y separar
+    SONG_ARTIST="$(echo "$SONG_ARTIST" | tr -d '\r')"
+    SONG_TITLE="$(echo "$SONG_TITLE" | tr -d '\r')"
 
-  # Limpiar
-  artist="$(echo "$artist" | tr -d '\r')"
-  title="$(echo "$title" | tr -d '\r')"
+    # Guardamos en archivos separados para que FFmpeg les dé formatos distintos
+    echo -n "${SONG_ARTIST}" > "${ARTIST_FILE}"
+    echo -n "${SONG_TITLE}" > "${TITLE_FILE}"
 
-  # Componer texto para pantalla
-  if [[ -n "$artist" && -n "$title" ]]; then
-    display="$(sanitize "$artist - $title")"
-  elif [[ -n "$title" ]]; then
-    display="$(sanitize "$title")"
-  elif [[ -n "$artist" ]]; then
-    display="$(sanitize "$artist")"
+    if [[ -n "${SONG_ART}" ]]; then
+      TMP_COVER="/tmp/antiradio_cover_$$.jpg"
+      curl -sL --max-time 10 -o "${TMP_COVER}" "${SONG_ART}" || rm -f "${TMP_COVER}"
+      if [[ -s "${TMP_COVER}" ]]; then
+        mv -f "${TMP_COVER}" "${COVER_FILE}"
+      fi
+    else
+      cp "${LOGO_FILE}" "${COVER_FILE}" || true
+    fi
   else
-    display="La Antiradio · En directo"
-  fi
-
-  # Escribir nowplaying
-  echo "$display" > "$NOW_FILE"
-
-  # Solo actualizar carátula si cambió el tema
-  key="$(echo "$display" | tr '[:upper:]' '[:lower:]')"
-  if [[ "$key" != "$last_key" ]]; then
-    got_cover=0
-
-    # 1) Carátula desde AzuraCast (siempre disponible)
-    img_url="$(echo "$json" | jq -r '.now_playing.song.art // empty' 2>/dev/null || true)"
-    if [[ -n "$img_url" ]]; then
-      if download_cover "$img_url"; then
-        got_cover=1
-      fi
-    fi
-
-    # 2) Carátula local (opcional) basada en el display
-    #    Guarda tus portadas aquí: /opt/antiradio/covers/<display>.jpg
-    if [[ "$got_cover" -eq 0 ]]; then
-      local_name="$(sanitize "$display").jpg"
-      local_path="${LOCAL_COVERS_DIR}/${local_name}"
-      if [[ -f "$local_path" ]]; then
-        cp -f "$local_path" "$COVER_FILE"
-        got_cover=1
-      fi
-    fi
-
-    # 3) Fallback: logo
-    if [[ "$got_cover" -eq 0 ]]; then
-      set_default_cover
-    fi
-
-    last_key="$key"
-    echo "[nowplaying] ♪ $display"
+    echo -n "La Antiradio" > "${ARTIST_FILE}"
+    echo -n "Stream Offline" > "${TITLE_FILE}"
+    cp "${LOGO_FILE}" "${COVER_FILE}" || true
   fi
 
   sleep "$POLL_INTERVAL"
