@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Zeno mount (según tu emisora)
-MOUNT="jkjslxjr7sntv"
-META_URL="https://api.zeno.fm/mounts/metadata/subscribe/${MOUNT}"
+# AzuraCast API – Now Playing
+API_URL="https://radio.laantiradio.com/api/nowplaying/la_antiradio"
+POLL_INTERVAL=15   # segundos entre consultas
 
 # Rutas del proyecto
 DIR="/opt/antiradio"
@@ -16,7 +16,7 @@ mkdir -p "$LOCAL_COVERS_DIR"
 
 sanitize() {
   # Limpia caracteres raros para nombres de archivo y texto
-  echo "$1" | tr -d '\r' | sed 's/[\/:*?"<>|]/_/g; s/  */ /g; s/^ *//; s/ *$//'
+  echo "$1" | tr -d '\r' | sed 's/[\\/:*?"<>|]/_/g; s/  */ /g; s/^ *//; s/ *$//'
 }
 
 set_default_cover() {
@@ -34,39 +34,35 @@ download_cover() {
   return 1
 }
 
-extract_image_url() {
-  # Intenta encontrar un campo de imagen en el JSON (Zeno no siempre lo envía)
-  jq -r '
-    .image? // .imageUrl? // .artwork? // .artworkUrl? // .cover? // .coverUrl? //
-    .thumbnail? // .thumbnailUrl? // .albumArt? // .albumArtUrl? // empty
-  ' 2>/dev/null || true
-}
-
 last_key=""
 
-echo "[nowplaying] leyendo metadatos de: $META_URL"
+echo "[nowplaying] consultando AzuraCast cada ${POLL_INTERVAL}s: $API_URL"
 
-# Con -N mantenemos streaming SSE sin buffer
-curl -fsSL -N "$META_URL" | while IFS= read -r line; do
-  # Solo procesar líneas que empiecen por "data:"
-  [[ "$line" == data:* ]] || continue
+while true; do
+  # Obtener JSON de la API de AzuraCast
+  json="$(curl -fsSL --max-time 10 "$API_URL" 2>/dev/null || true)"
 
-  # Quitar "data:" y posibles espacios
-  json="${line#data:}"
-  json="${json# }"
+  if [[ -z "$json" ]]; then
+    echo "[nowplaying] sin respuesta de la API, reintentando..."
+    sleep "$POLL_INTERVAL"
+    continue
+  fi
 
-  # Obtener streamTitle (Zeno en tu caso envía este campo)
-  streamTitle="$(echo "$json" | jq -r '.streamTitle // empty' 2>/dev/null || true)"
-  streamTitle="$(echo "$streamTitle" | tr -d '\r')"
+  # Extraer artista y título
+  artist="$(echo "$json" | jq -r '.now_playing.song.artist // empty' 2>/dev/null || true)"
+  title="$(echo "$json"  | jq -r '.now_playing.song.title // empty'  2>/dev/null || true)"
 
-  # Si viene con guiones bajos, los cambiamos por espacios
-  streamTitle_pretty="$(echo "$streamTitle" | sed 's/_/ /g')"
+  # Limpiar
+  artist="$(echo "$artist" | tr -d '\r')"
+  title="$(echo "$title" | tr -d '\r')"
 
-  # Quita sufijos tipo " (master).wav" y extensiones .wav/.mp3/.flac
-  streamTitle_pretty="$(echo "$streamTitle_pretty" | sed -E 's/\s*\(.*\)\.(wav|mp3|flac)$//I; s/\.(wav|mp3|flac)$//I')"
-
-  if [[ -n "$streamTitle_pretty" ]]; then
-    display="$(sanitize "$streamTitle_pretty")"
+  # Componer texto para pantalla
+  if [[ -n "$artist" && -n "$title" ]]; then
+    display="$(sanitize "$artist - $title")"
+  elif [[ -n "$title" ]]; then
+    display="$(sanitize "$title")"
+  elif [[ -n "$artist" ]]; then
+    display="$(sanitize "$artist")"
   else
     display="La Antiradio · En directo"
   fi
@@ -79,8 +75,8 @@ curl -fsSL -N "$META_URL" | while IFS= read -r line; do
   if [[ "$key" != "$last_key" ]]; then
     got_cover=0
 
-    # 1) Si viniera URL de imagen en el JSON (normalmente no en tu caso, pero queda preparado)
-    img_url="$(echo "$json" | extract_image_url)"
+    # 1) Carátula desde AzuraCast (siempre disponible)
+    img_url="$(echo "$json" | jq -r '.now_playing.song.art // empty' 2>/dev/null || true)"
     if [[ -n "$img_url" ]]; then
       if download_cover "$img_url"; then
         got_cover=1
@@ -104,6 +100,8 @@ curl -fsSL -N "$META_URL" | while IFS= read -r line; do
     fi
 
     last_key="$key"
+    echo "[nowplaying] ♪ $display"
   fi
-done
 
+  sleep "$POLL_INTERVAL"
+done

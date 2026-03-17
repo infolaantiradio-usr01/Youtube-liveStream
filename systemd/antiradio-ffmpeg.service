@@ -1,5 +1,5 @@
 [Unit]
-Description=La Antiradio - FFmpeg (Zeno -> YouTube 24/7)
+Description=La Antiradio - FFmpeg (AzuraCast -> YouTube 24/7)
 After=network-online.target antiradio-nowplaying.service
 Wants=network-online.target
 Requires=antiradio-nowplaying.service

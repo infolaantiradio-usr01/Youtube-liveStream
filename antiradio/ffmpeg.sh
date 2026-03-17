@@ -7,8 +7,8 @@ set -euo pipefail
 STREAM_KEY="TU_STREAM_KEY"
 RTMP_URL="rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}"
 
-# Audio desde Zeno
-ZENO_URL="https://stream.zeno.fm/jkjslxjr7sntv"
+# Audio desde AzuraCast
+AZURACAST_URL="https://radio.laantiradio.com/listen/la_antiradio/laantiradio.mp3"
 
 # Archivos generados por nowplaying.sh
 LOGO="/opt/antiradio/logo.png"
@@ -18,7 +18,7 @@ NOW="/opt/antiradio/nowplaying.txt"
 exec ffmpeg \
 -hide_banner -loglevel info \
 -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 10 \
--i "${ZENO_URL}" \
+-i "${AZURACAST_URL}" \
 -loop 1 -i "${LOGO}" \
 -loop 1 -i "${COVER}" \
 -filter_complex "\
