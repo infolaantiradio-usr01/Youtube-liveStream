@@ -9,7 +9,6 @@ POLL_INTERVAL=15   # segundos entre consultas
 DIR="/opt/antiradio"
 ARTIST_FILE="${DIR}/artist.txt"
 TITLE_FILE="${DIR}/title.txt"
-GENRE_FILE="${DIR}/genre.txt"
 COVER_FILE="${DIR}/cover.jpg"
 LOGO_FILE="${DIR}/logo.png"
 
@@ -23,19 +22,16 @@ while true; do
 
   if [[ -n "${RESPONSE}" ]] && echo "${RESPONSE}" | jq -e '.now_playing.song' >/dev/null 2>&1; then
     SONG_ARTIST=$(echo "${RESPONSE}" | jq -r '.now_playing.song.artist // "La Antiradio"')
-    SONG_TITLE=$(echo "${RESPONSE}"  | jq -r '.now_playing.song.title  // "Live 24/7"')
-    SONG_GENRE=$(echo "${RESPONSE}"  | jq -r '.now_playing.song.genre  // "ALTERNATIVE"')
-    SONG_ART=$(echo "${RESPONSE}"    | jq -r '.now_playing.song.art    // empty')
+    SONG_TITLE=$(echo "${RESPONSE}" | jq -r '.now_playing.song.title // "Live 24/7"')
+    SONG_ART=$(echo "${RESPONSE}" | jq -r '.now_playing.song.art // empty')
 
-    # Limpiar: quitar \r y pasar género a mayúsculas
+    # Limpiar y separar
     SONG_ARTIST="$(echo "$SONG_ARTIST" | tr -d '\r')"
-    SONG_TITLE="$(echo "$SONG_TITLE"   | tr -d '\r')"
-    SONG_GENRE="$(echo "$SONG_GENRE"   | tr -d '\r' | tr '[:lower:]' '[:upper:]')"
+    SONG_TITLE="$(echo "$SONG_TITLE" | tr -d '\r')"
 
-    # Guardar en archivos para que FFmpeg los lea con reload=1
+    # Guardamos en archivos separados para que FFmpeg les dé formatos distintos
     echo -n "${SONG_ARTIST}" > "${ARTIST_FILE}"
-    echo -n "${SONG_TITLE}"  > "${TITLE_FILE}"
-    echo -n "${SONG_GENRE}"  > "${GENRE_FILE}"
+    echo -n "${SONG_TITLE}" > "${TITLE_FILE}"
 
     if [[ -n "${SONG_ART}" ]]; then
       TMP_COVER="/tmp/antiradio_cover_$$.jpg"
@@ -47,9 +43,8 @@ while true; do
       cp "${LOGO_FILE}" "${COVER_FILE}" || true
     fi
   else
-    echo -n "La Antiradio"  > "${ARTIST_FILE}"
+    echo -n "La Antiradio" > "${ARTIST_FILE}"
     echo -n "Stream Offline" > "${TITLE_FILE}"
-    echo -n "LIVE"           > "${GENRE_FILE}"
     cp "${LOGO_FILE}" "${COVER_FILE}" || true
   fi
 
