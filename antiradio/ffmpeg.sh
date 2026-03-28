@@ -45,12 +45,12 @@ exec ffmpeg -hide_banner -loglevel warning \
     [2:v]scale=240:240:force_original_aspect_ratio=decrease,pad=240:240:(ow-iw)/2:(oh-ih)/2:color=black@0[cover_sc]; \
     [cover_sc]pad=iw+6:ih+6:3:3:color=0xe01a2b[cover_bd]; \
     [vid_bg][cover_bd]overlay=50:H-h-95:eof_action=pass[bg_cov]; \
-    [bg_cov]drawbox=x=316:y=H-250:w=660:h=195:color=black@0.55:t=fill[bg_pan]; \
+    [bg_cov]drawbox=x=316:y=ih-250:w=660:h=195:color=black@0.55:t=fill[bg_pan]; \
     [bg_pan]drawtext=fontfile=${BOLD_FONT}:textfile=${ARTIST_FILE}:reload=1:\
 fontcolor=white:fontsize=52:\
 shadowcolor=black@0.9:shadowx=3:shadowy=3:\
 x=326:y=H-th-195[txt_ar]; \
-    [txt_ar]drawbox=x=326:y=H-138:w=550:h=2:color=0xe01a2b:t=fill[sep]; \
+    [txt_ar]drawbox=x=326:y=ih-138:w=550:h=2:color=0xe01a2b:t=fill[sep]; \
     [sep]drawtext=fontfile=${FONT}:textfile=${TITLE_FILE}:reload=1:\
 fontcolor=0xdddddd:fontsize=30:\
 shadowcolor=black@0.9:shadowx=2:shadowy=2:\
