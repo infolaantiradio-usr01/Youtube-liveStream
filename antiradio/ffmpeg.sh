@@ -20,26 +20,18 @@ BOLD_FONT="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 VBITRATE="1800k"
 ABITRATE="160k"
 
-# ── Archivos de arranque (evitan crash si nowplaying no ha arrancado aún) ──
-echo -n "La Antiradio" > "${ARTIST_FILE}"
-echo -n "Iniciando..."  > "${TITLE_FILE}"
-echo -n "LIVE"          > "${GENRE_FILE}"
-echo -n "EN DIRECTO"    > "${LIVE_FILE}"
+mkdir -p /opt/antiradio
+sleep 2
+echo -n "EN DIRECTO"      > "${LIVE_FILE}"
 echo -n "laantiradio.com" > "${URL_FILE}"
 
 if [ ! -f "$BOLD_FONT" ]; then BOLD_FONT="$FONT"; fi
 
-# ── Posiciones clave (frame 1280x720) ──
-# Cover: 246×246px (240 + 6px borde rojo). Posición: x=50, y=H-h-95
-# Área de texto: x=316 (50+246+20), ocupando hasta aprox. x=970
-# Panel oscuro: y=H-250 a y=H-60 (cubre texto + deja hueco al waveform)
-# Waveform: y=H-50 a y=H (franja de 50px en el fondo)
-
 exec ffmpeg -hide_banner -loglevel warning \
   -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 10 \
-  -i "${AZURACAST_URL}" \
-  -stream_loop -1 -safe 0 -f concat -i "${BG_LIST}" \
-  -f image2 -loop 1 -i "${COVER_FILE}" \
+  -thread_queue_size 512 -i "${AZURACAST_URL}" \
+  -stream_loop -1 -safe 0 -f concat -thread_queue_size 512 -i "${BG_LIST}" \
+  -f image2 -loop 1 -thread_queue_size 512 -i "${COVER_FILE}" \
   -filter_complex "\
     [1:v]scale=1280:720,format=yuv420p[vid_bg]; \
     [2:v]scale=240:240:force_original_aspect_ratio=decrease,pad=240:240:(ow-iw)/2:(oh-ih)/2:color=black@0[cover_sc]; \

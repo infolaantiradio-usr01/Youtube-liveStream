@@ -9,7 +9,7 @@ Type=simple
 WorkingDirectory=/opt/antiradio
 ExecStart=/opt/antiradio/ffmpeg.sh
 Restart=always
-RestartSec=5
+RestartSec=8
 TimeoutStartSec=0
 Nice=5
 
